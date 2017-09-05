@@ -9,25 +9,25 @@
 #
 # LICENSE:      GNU GPLv3 (http://www.gnu.de/documents/gpl-3.0.en.html)
 #
-# NOTICE:       THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW. 
-#               EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES 
-#               PROVIDE THE PROGRAM “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR 
-#               IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY 
-#               AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND 
+# NOTICE:       THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+#               EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+#               PROVIDE THE PROGRAM “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+#               IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+#               AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND
 #               PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE DEFECTIVE,
 #               YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
 #
-#               IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY 
-#               COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS 
-#               PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, 
-#               INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE 
-#               THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED 
-#               INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE 
-#               PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER 
+#               IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY
+#               COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS
+#               PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
+#               INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+#               THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED
+#               INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE
+#               PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER
 #               PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-#               
+#
 # USAGE:        simple_google_tts [-p|-g|-h] languagecode ['strings'|'file.txt']
-#               
+#
 #               please consult the README or the help output (-h) for more information
 
 ############# GLOBVAR/PREP ###############
@@ -91,7 +91,7 @@ MsgInfoDone="All sections processed. Waiting for playback to finish."
 
 check_deps () {
     for i in "$@"; do
-      type "$i" > /dev/null 2>&1 
+      type "$i" > /dev/null 2>&1
       if [[ "$?" != "0" ]]; then
         MissingDeps+=" $i"
       fi
@@ -211,7 +211,7 @@ split_into_paragraphs(){
   # (e.g.: PDF files where each line ends with a newline).
   # Instead we look for lines ending with a full stop and divide
   # our text input into sections based on that
-  
+
   InputTextModded="$(echo "$InputText" | \
     sed 's/\.$/|/g' | sed 's/^\s*$/|/g' | tr '\n' ' ' | tr '|' '\n')"
 
@@ -277,17 +277,51 @@ tts_pico(){
     LangCode="fr-FR"
   elif [[ "$LangCode" = "it" ]]; then
     LangCode="it-IT"
-  else 
+  else
     echo "$MsgErrInvalidLang"
     exit 1
   fi
-  OutFile="out.wav"
-  # pico2wave handles long text inputs and 
-  # fixed formatting line-breaks well enough on its own. 
+
+  # NOTE original section of code
+    # OutFile="out.wav"
+  # NOTE original section of code
+  # pico2wave handles long text inputs and
+  # fixed formatting line-breaks well enough on its own.
   # no need to use split_into_paragraphs()
-  pico_synth "$InputText"
-  echo "$MsgInfoPlayback"
-  $Player "$OutFile" > /dev/null 2>&1
+
+  # NOTE original section of code
+
+    # pico_synth "$InputText"
+    # echo "$MsgInfoPlayback"
+    # $Player "$OutFile" > /dev/null 2>&1
+
+  # NOTE original section of code
+  #  NOTE OR MAYBE YES
+
+  split_into_paragraphs
+  for i in "${!TextSections[@]}"; do
+    if [[ "$i" = "$Sections" ]]; then
+      echo "$MsgInfoDone"
+      [[ -n "$PlayerPID" ]] && wait "$PlayerPID"
+      break
+    else
+      echo "Processing $((i+1)) out of $Sections paragraphs"
+    fi
+    OutFile="out_$i.wav"
+    SectionText="${TextSections[$i]}"
+    if [[ -n "${SectionText//[[:space:]]/}" ]]; then
+      pico_synth "${TextSections[$i]}"
+      [[ -n "$PlayerPID" ]] && wait "$PlayerPID"
+      [[ -f "out_$((i-1)).wav" ]] && rm "out_$((i-1)).wav"
+      echo "$MsgInfoPlayback $((i+1))"
+      $Player "$OutFile" > /dev/null 2>&1 &
+      PlayerPID="$!"
+    else
+      echo "$MsgInfoSectionEmpty"
+      continue
+    fi
+  done
+
 }
 
 cleanup(){
