@@ -198,7 +198,9 @@ set_save_file(){
   # need add lame enconding maybe in main options or automatic selection of availaible encoders ?
 
   if [[ "$OptSave" = "1" ]]; then
-    oggenc -a "artist" -t "title" -l "album" -G "genre" -c "comment" -o "${OutFile%wav}ogg" "$OutFile"
+    mkdir -p ~/ogg_output
+    output_dir=$HOME"/ogg_output/"
+    oggenc -a "artist" -t "title" -l "album" -G "genre" -c "comment" -o "$output_dir${OutFile%wav}ogg" "$OutFile"
   else
       echo "can't save your file : ..."
       # NOTE use lame instead
@@ -310,7 +312,7 @@ tts_pico(){
     # echo "$MsgInfoPlayback"
     # $Player "$OutFile" > /dev/null 2>&1
   # NOTE original section of code
-  
+
 
   split_into_paragraphs
   for i in "${!TextSections[@]}"; do
