@@ -202,9 +202,11 @@ set_save_file(){
     mkdir -p ~/ogg_output
     output_dir=$HOME"/ogg_output/"
     oggenc -a "artist" -t "title" -l "album" -G "genre" -c "comment" -o "$output_dir${OutFile%wav}ogg" "$OutFile"
-
       # NOTE use lame instead
       #lame -V 5 --add-id3v2 --pad-id3v2 --ignore-tag-errors --ta artist --tl album --tt title --tn track --ty year --tg genre --tc comment file.wav file.mp3
+    else
+      $Player "$OutFile" > /dev/null 2>&1 &
+      PlayerPID="$!"
   fi
 }
 
@@ -346,8 +348,6 @@ tts_pico(){
       [[ -f "out_$((i-1)).wav" ]] && rm "out_$((i-1)).wav"
       echo "$MsgInfoPlayback $((i+1))"
       set_save_file
-      $Player "$OutFile" > /dev/null 2>&1 &
-      PlayerPID="$!"
     else
       echo "$MsgInfoSectionEmpty"
       continue
