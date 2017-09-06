@@ -1,4 +1,4 @@
-bin/bash
+#!/bin/bash
 
 # NAME:         Simple Google TTS
 # VERSION:      0.1
@@ -52,7 +52,7 @@ $(basename "$0") [-p|-g|-s|-h] languagecode ['strings'|'file.txt']
 
     -p:   use offline TTS (pico2wave) instead of Google's TTS system
     -g:   activate gui notifications (via notify-send)
-    -s:   save as ogg file
+    -s:   save as ogg file (only working for Pico2Wave ... for now)
     -h:   display this help section
 
     Selection of valid language codes: en, es, de...
@@ -196,15 +196,30 @@ set_tts_mode(){
 set_save_file(){
   # NOTE Is needed a more elaborated logic , add comments , title , artist ,etc ...
   # and add lame enconding maybe in main options or automatic selection of an available encoders
+  # TODO add dynamic directory creation
 
   if [[ "$OptSave" = "1" ]]; then
     mkdir -p ~/ogg_output
     output_dir=$HOME"/ogg_output/"
     oggenc -a "artist" -t "title" -l "album" -G "genre" -c "comment" -o "$output_dir${OutFile%wav}ogg" "$OutFile"
-  else
-      echo "can't save your file : ..."
+
       # NOTE use lame instead
       #lame -V 5 --add-id3v2 --pad-id3v2 --ignore-tag-errors --ta artist --tl album --tt title --tn track --ty year --tg genre --tc comment file.wav file.mp3
+  fi
+}
+
+resample(){
+  # when finish re-arm the ogg files in one and delete the pieces
+  # NOTE vorbis can't encode to 8-bit "-b 8" Recommended for voice
+  # NOTE vorbis can campress to 64  ??
+  # NOTE maybe need change to another codec maybe FLAC
+
+  if [[ "$OptSave" = "1" ]]; then
+    echo "joining the ogg files ..."
+      /usr/bin/sox $(ls -v $HOME/ogg_output/out_*ogg) "$HOME/ogg_output/output_original.ogg"
+      /usr/bin/sox "$HOME/ogg_output/output_original.ogg" -c 1 -C 10 "$HOME/ogg_output/output_re_sample.ogg" bandpass 3200 1600h rate 44100 norm speed 1.03
+      rm $(ls -v $HOME/ogg_output/out_*ogg)
+    echo "Done..."
   fi
 }
 
@@ -375,13 +390,5 @@ set_input_mode
 notify "$MsgInfoSynthesize"
 "$tts_engine"
 
-# when finish re-arm the ogg files in one and delete the pieces
-# NOTE vorbis can't encode to 8-bit "-b 8" Recommended for voice
-# NOTE vorbis can campress to 64  ??
-# NOTE maybe need change to another codec maybe FLAC
-
-echo "joining the ogg files ..."
-  /usr/bin/sox $(ls -v $HOME/ogg_output/out_*ogg) "$HOME/ogg_output/output_original.ogg"
-  /usr/bin/sox "$HOME/ogg_output/output_original.ogg" -c 1 -C 10 "$HOME/ogg_output/output_re_sample.ogg" bandpass 3200 1600h rate 44100 norm speed 1.03
-  rm $(ls -v $HOME/ogg_output/out_*ogg)
-echo "Done..."
+# NOTE if choose to save the output
+resample
