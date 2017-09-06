@@ -48,10 +48,11 @@ Player="play"
 ##############  DIALOGS  #################
 
 Usage="\
-$(basename "$0") [-p|-g|-h] languagecode ['strings'|'file.txt']
+$(basename "$0") [-p|-g|-s|-h] languagecode ['strings'|'file.txt']
 
     -p:   use offline TTS (pico2wave) instead of Google's TTS system
     -g:   activate gui notifications (via notify-send)
+    -s:   save as ogg file
     -h:   display this help section
 
     Selection of valid language codes: en, es, de...
@@ -122,11 +123,13 @@ check_existing_instance(){
 
 arg_evaluate_options(){
     # grab options if present
-    while getopts "gph" Options; do
+    while getopts "gpsh" Options; do
       case $Options in
         g ) OptNotify="1"
             ;;
         p ) OptOffline="1"
+            ;;
+        s ) OptSave="1"
             ;;
         h ) echo "$Usage"
             exit 0
@@ -187,6 +190,19 @@ set_tts_mode(){
     echo "$MsgInfoModeGoogle"
     tts_engine="tts_google"
     OutFile="out.mp3"
+  fi
+}
+
+set_save_file(){
+  # NOTE need more elaborated logic , add comment title artist etc ...
+  # need add lame enconding maybe in main options or automatic selection of availaible encoders ?
+
+  if [[ "$OptSave" = "1" ]]; then
+    oggenc -a "artist" -t "title" -l "album" -G "genre" -c "comment" -o "${OutFile%wav}ogg" "$OutFile"
+  else
+      echo "can't save your file : ..."
+      # NOTE use lame instead
+      #lame -V 5 --add-id3v2 --pad-id3v2 --ignore-tag-errors --ta artist --tl album --tt title --tn track --ty year --tg genre --tc comment file.wav file.mp3
   fi
 }
 
@@ -290,13 +306,11 @@ tts_pico(){
   # no need to use split_into_paragraphs()
 
   # NOTE original section of code
-
     # pico_synth "$InputText"
     # echo "$MsgInfoPlayback"
     # $Player "$OutFile" > /dev/null 2>&1
-
   # NOTE original section of code
-  #  NOTE OR MAYBE YES
+  
 
   split_into_paragraphs
   for i in "${!TextSections[@]}"; do
@@ -314,6 +328,7 @@ tts_pico(){
       [[ -n "$PlayerPID" ]] && wait "$PlayerPID"
       [[ -f "out_$((i-1)).wav" ]] && rm "out_$((i-1)).wav"
       echo "$MsgInfoPlayback $((i+1))"
+      set_save_file
       $Player "$OutFile" > /dev/null 2>&1 &
       PlayerPID="$!"
     else
