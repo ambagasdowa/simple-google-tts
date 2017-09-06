@@ -1,6 +1,6 @@
 ## Status update
 
-**This project is currently unmaintained and will remain so for the foreseeable future**. 
+**This project is currently unmaintained and will remain so for the foreseeable future**.
 
 This script and many others like it rely on an unofficial API that has recently become increasingly difficult to support. As Google continues to lock down access to their TTS interface I see no choice other than to suspend maintaining this script for the time being. I sincerely hope that the future will see an official way to use Google TTS on desktop Linux. Until then, please feel free to fork this project if you want to try to fix it.
 
@@ -35,7 +35,7 @@ Ever wanted to use Google text-to-speech on Linux? Now you can.
 
 ## Description
 
-The intent of this project is to provide an easy way to use text-to-speech output by Google on your Linux desktop. The script supports reading from standard input, plain text files, and highlighted text. A fall-back interface based on `pico2wave` takes care of the TTS output when you are offline. 
+The intent of this project is to provide an easy way to use text-to-speech output by Google on your Linux desktop. The script supports reading from standard input, plain text files, and highlighted text. A fall-back interface based on `pico2wave` takes care of the TTS output when you are offline.
 
 ----
 
@@ -49,7 +49,7 @@ Google imposes a 100-character limit on their speech synthesis service that make
 
 `speak.pl` works around this limitation by breaking the text input down into appropriate chunks. These chunks are set intelligently based on punctuation and syntax of the text. Having processed all chunks `speak.pl` then concatenates the speech fragments into one audio file while truncating segments of silence at the start and end of each fragment.
 
-All of these processing steps ensure a relatively natural voice output and minimize the number of clunky pauses caused by the 100-character limitation. The one remaining problem with this approach is that the waiting time between user input and voice playback scales drastically with the length of the text. 
+All of these processing steps ensure a relatively natural voice output and minimize the number of clunky pauses caused by the 100-character limitation. The one remaining problem with this approach is that the waiting time between user input and voice playback scales drastically with the length of the text.
 
 This is where `simple_google_tts` comes in: Instead of passing the text directly to `speak.pl`, `simple_google_tts` first breaks down the input into paragraphs. The paragraphs are then processed one by one with each paragraph being played back while the next one is synthesized. Any length of text can be parsed with reasonable speed in this manner.
 
@@ -91,19 +91,30 @@ Dependencies, as listed in `speak.pl`'s header:
 
 Perl should be part of your default Debian/Ubuntu installation.
 
+**save as OGG**
+
+Dependencies are
+
+`oggenc` for wav to ogg encoding
+
+on Debian:
+
+    sudo apt-get install vorbis-tools
+
+
 ### Installation
 
 1. Install all dependencies
 
 2. Clone this repository:
-    
+
         git clone https://github.com/Glutanimate/simple-google-tts.git
 
 3. Navigate to the download directory
 
         cd simple-google-tts
 
-You should be able to run `./simple_google_tts` now. If you wish you can symlink `simple_google_tts` to your `PATH` (e.g. `~/bin` or `/usr/local/bin`) to make it easier to access. 
+You should be able to run `./simple_google_tts` now. If you wish you can symlink `simple_google_tts` to your `PATH` (e.g. `~/bin` or `/usr/local/bin`) to make it easier to access.
 
 `speak.pl` must always reside in the same directory as `simple_google_tts`.
 
@@ -133,10 +144,11 @@ If no arguments are provided `simple_google_tts` will try to read from the curre
 At all times you can access an overview of all supported options by invoking the help output:
 
     $ simple_google_tts -h
-    simple_google_tts [-p|-g|-h] languagecode ['strings'|'file.txt']
+    simple_google_tts [-p|-g|-s|-h] languagecode ['strings'|'file.txt']
 
         -p:   use offline TTS (pico2wave) instead of Google's TTS system
         -g:   activate gui notifications (via notify-send)
+        -s:   save as ogg file (only working for Pico2Wave)
         -h:   display this help section
 
         Selection of valid language codes: en, es, de...
@@ -153,6 +165,7 @@ At all times you can access an overview of all supported options by invoking the
 
 - `-p`: By default `simple_google_tts` will use `speak.pl` to query Google's speech synthesis service and only fall back to `pico2wave` if no Internet connection is found. If you don't want to use Google's TTS service you can use this option to default to `pico2wave` speech synthesis.
 - `-g`: If you plan to assign `simple_google_tts` to a keyboard shortcut you can use this option to enable GUI notifications using `libnotify-bin` (the default notification daemon).
+- `-s`: This option suppress the audio output , build a directory under your home directory named `ogg_output` with all chunks joined and a re-sample file
 - `-h`: Display help section
 
 ### Supported languages
@@ -279,7 +292,7 @@ Google's TTS service currently supports the following language codes:
     xh  Xhosa
     yi  Yiddish
     yo  Yoruba
-    zu  Zulu 
+    zu  Zulu
 
 Please note that, out of these, the `pico2wave` back-end only supports the following languages:
 
@@ -299,17 +312,21 @@ Please note that, out of these, the `pico2wave` back-end only supports the follo
 
     simple_google_tts -gp en
 
+**Read English text from file and save output as a single ogg file**
+
+    simple_google_tts -s en readme.md
+
 ## Known issues
 
 - to prevent simultaneous output the script tries to force only one instance at a time. Unfortunately this fails sometimes, which can be a problem when using the script through a keyboard shortcut
 
-- there is no easy way to terminate the TTS output if the script is used via a keyboard shortcut. 
-  
+- there is no easy way to terminate the TTS output if the script is used via a keyboard shortcut.
+
     Highlighting an empty line or space and then executing the script should, in theory, terminate the last script instance and stop the playback. Because of the first issue this does not always work.
 
     You could probably assign another hotkey to terminate any running instances of the script (e.g. `pkill -9 simple_google_tts`; warning: I have yet to try this out).
 
-- too many requests too quickly will cause Google to start requesting CAPTCHA input. I have yet to hit this limit in my regular use of the script. 
+- too many requests too quickly will cause Google to start requesting CAPTCHA input. I have yet to hit this limit in my regular use of the script.
 
 ## Similar projects
 
@@ -322,6 +339,6 @@ Please note that, out of these, the `pico2wave` back-end only supports the follo
 
 *`simple_google_tts` copyright 2014 Glutanimate*
 
-`simple_google_tts` is licensed under the [GNU GPLv3](http://www.gnu.de/documents/gpl-3.0.en.html). For licensing information concerning `speak.pl` please contact [Michal Fapso](https://github.com/michalfapso). 
+`simple_google_tts` is licensed under the [GNU GPLv3](http://www.gnu.de/documents/gpl-3.0.en.html). For licensing information concerning `speak.pl` please contact [Michal Fapso](https://github.com/michalfapso).
 
 This project is not endorsed, certified or otherwise approved in any way by Google™.
