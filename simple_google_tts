@@ -1,4 +1,4 @@
-#!/bin/bash
+bin/bash
 
 # NAME:         Simple Google TTS
 # VERSION:      0.1
@@ -194,8 +194,8 @@ set_tts_mode(){
 }
 
 set_save_file(){
-  # NOTE need more elaborated logic , add comment title artist etc ...
-  # need add lame enconding maybe in main options or automatic selection of availaible encoders ?
+  # NOTE Is needed a more elaborated logic , add comments , title , artist ,etc ...
+  # and add lame enconding maybe in main options or automatic selection of an available encoders
 
   if [[ "$OptSave" = "1" ]]; then
     mkdir -p ~/ogg_output
@@ -374,3 +374,14 @@ set_tts_mode
 set_input_mode
 notify "$MsgInfoSynthesize"
 "$tts_engine"
+
+# when finish re-arm the ogg files in one and delete the pieces
+# NOTE vorbis can't encode to 8-bit "-b 8" Recommended for voice
+# NOTE vorbis can campress to 64  ??
+# NOTE maybe need change to another codec maybe FLAC
+
+echo "joining the ogg files ..."
+  /usr/bin/sox $(ls -v $HOME/ogg_output/out_*ogg) "$HOME/ogg_output/output_original.ogg"
+  /usr/bin/sox "$HOME/ogg_output/output_original.ogg" -c 1 -C 10 "$HOME/ogg_output/output_re_sample.ogg" bandpass 3200 1600h rate 44100 norm speed 1.03
+  rm $(ls -v $HOME/ogg_output/out_*ogg)
+echo "Done..."
